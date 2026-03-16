@@ -1,0 +1,9 @@
+{
+	"name": "adf-ingestion-framework-sandbox",
+	"location": "westeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "f0b549d1-c405-4b9b-b7d6-62905ee971c1",
+		"tenantId": "a8533784-aa3c-403b-a61a-1533ecc6e3ed"
+	}
+}
