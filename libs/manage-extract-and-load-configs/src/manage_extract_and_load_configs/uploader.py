@@ -10,7 +10,7 @@ from azure.identity import DefaultAzureCredential
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob import BlobServiceClient
 from dotenv import dotenv_values, find_dotenv
-from extractor_and_loader.models import ExtractLoadConfig
+from extract_and_load.models import ExtractLoadConfig
 from jinja2 import Environment, StrictUndefined
 import yaml
 
@@ -29,15 +29,31 @@ class DeleteResult:
     destination_container: str
 
 
-STORAGE_ACCOUNT_URL_ENV = "MANAGE_EL_STORAGE_ACCOUNT_URL"
-STORAGE_CONTAINER_ENV = "MANAGE_EL_STORAGE_CONTAINER"
-RUNTIME_ENV_ENV = "MANAGE_EL_ENV"
+STORAGE_ACCOUNT_URL_ENV = "EL_STORAGE_ACCOUNT_URL"
+STORAGE_CONTAINER_ENV = "EL_CONFIG_CONTAINER"
+RUNTIME_ENV_ENV = "EL_ENV"
 
 
-def _read_env_file_values() -> dict[str, str]:
+def _resolve_dotenv_path(anchor_path: Path | None = None) -> str:
+    if anchor_path is not None:
+        base_dir = anchor_path if anchor_path.is_dir() else anchor_path.parent
+        for parent in [base_dir, *base_dir.parents]:
+            candidate = parent / ".env"
+            if candidate.exists() and candidate.is_file():
+                return str(candidate)
+
+    # Fallback to current working directory search.
     dotenv_path = find_dotenv(usecwd=True)
-    if not dotenv_path:
-        raise ValueError("Missing .env file. Expected .env in the current working directory tree.")
+    if dotenv_path:
+        return dotenv_path
+
+    raise ValueError(
+        "Missing .env file. Expected .env near the project/source path or in the current working directory tree."
+    )
+
+
+def _read_env_file_values(anchor_path: Path | None = None) -> dict[str, str]:
+    dotenv_path = _resolve_dotenv_path(anchor_path)
 
     loaded_values = dotenv_values(dotenv_path)
     values: dict[str, str] = {}
@@ -48,8 +64,8 @@ def _read_env_file_values() -> dict[str, str]:
     return values
 
 
-def _get_preconfigured_storage_settings() -> tuple[str, str]:
-    env_values = _read_env_file_values()
+def _get_preconfigured_storage_settings(anchor_path: Path | None = None) -> tuple[str, str]:
+    env_values = _read_env_file_values(anchor_path)
     account_url = env_values.get(STORAGE_ACCOUNT_URL_ENV)
     container = env_values.get(STORAGE_CONTAINER_ENV)
     if not account_url:
@@ -94,7 +110,7 @@ def _resolve_variables_path(source_path: Path, variables_path: Path | None) -> P
     if variables_path is not None:
         return variables_path.resolve()
 
-    env_values = _read_env_file_values()
+    env_values = _read_env_file_values(source_path)
     env_name = env_values.get(RUNTIME_ENV_ENV)
     if not env_name:
         raise ValueError(
@@ -230,7 +246,7 @@ def upload_configs_to_blob(
     if not files:
         raise ValueError(f"No YAML files found under '{source_path}'.")
 
-    account_url, container = _get_preconfigured_storage_settings()
+    account_url, container = _get_preconfigured_storage_settings(source_path)
     feature_branch_name = _detect_feature_branch_name(source_path)
 
     resolved_variables_path = _resolve_variables_path(source_path, variables_path)
@@ -282,7 +298,7 @@ def delete_configs_from_blob(
     if not files:
         raise ValueError(f"No YAML files found under '{source_path}'.")
 
-    account_url, container = _get_preconfigured_storage_settings()
+    account_url, container = _get_preconfigured_storage_settings(source_path)
     feature_branch_name = _detect_feature_branch_name(source_path)
     deleted_count = 0
 

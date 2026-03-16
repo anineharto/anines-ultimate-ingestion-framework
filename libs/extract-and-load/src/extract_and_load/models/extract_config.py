@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from extractor_and_loader.models.common import Metadata
+from extract_and_load.models.base_config import Metadata
 
 
 class SqlExtractSpec(BaseModel):
@@ -31,7 +31,17 @@ class SqlExtractConfig(BaseModel):
     spec: SqlExtractSpec
 
 
+class ApiExtractSpec(BaseModel):
+    feed: str
+
+
+class ApiExtractConfig(BaseModel):
+    kind: Literal["ApiExtractConfig"]
+    metadata: Metadata
+    spec: ApiExtractSpec
+
+
 ExtractConfig = Annotated[
-    SqlExtractConfig,
+    SqlExtractConfig | ApiExtractConfig,
     Field(discriminator="kind"),
 ]

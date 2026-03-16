@@ -1,0 +1,114 @@
+[tasks."env:show"]
+description = "Show active EL_ENV from .env"
+run = """
+python3 - <<'PY'
+from pathlib import Path
+
+env_file = Path(".env")
+if not env_file.exists():
+    raise SystemExit(".env not found")
+
+current = None
+for line in env_file.read_text(encoding="utf-8").splitlines():
+    if line.startswith("EL_ENV="):
+        current = line.split("=", 1)[1].strip()
+        break
+
+print(f"EL_ENV={current}" if current else "EL_ENV is not set")
+PY
+"""
+
+[tasks."env:sandbox"]
+description = "Set EL_ENV=sandbox in .env"
+run = """
+python3 - <<'PY'
+from pathlib import Path
+
+env_name = "sandbox"
+env_file = Path(".env")
+if not env_file.exists():
+    env_file.write_text(f"EL_ENV={env_name}\\n", encoding="utf-8")
+    print("Created .env with EL_ENV=sandbox")
+    raise SystemExit(0)
+
+lines = env_file.read_text(encoding="utf-8").splitlines()
+updated = False
+for idx, line in enumerate(lines):
+    if line.startswith("EL_ENV="):
+        lines[idx] = f"EL_ENV={env_name}"
+        updated = True
+        break
+
+if not updated:
+    lines.append(f"EL_ENV={env_name}")
+
+env_file.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+print("Set EL_ENV=sandbox")
+PY
+"""
+
+[tasks."env:dev"]
+description = "Set EL_ENV=dev in .env"
+run = """
+python3 - <<'PY'
+from pathlib import Path
+
+env_name = "dev"
+env_file = Path(".env")
+if not env_file.exists():
+    env_file.write_text(f"EL_ENV={env_name}\\n", encoding="utf-8")
+    print("Created .env with EL_ENV=dev")
+    raise SystemExit(0)
+
+lines = env_file.read_text(encoding="utf-8").splitlines()
+updated = False
+for idx, line in enumerate(lines):
+    if line.startswith("EL_ENV="):
+        lines[idx] = f"EL_ENV={env_name}"
+        updated = True
+        break
+
+if not updated:
+    lines.append(f"EL_ENV={env_name}")
+
+env_file.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+print("Set EL_ENV=dev")
+PY
+"""
+
+[tasks."env:prod"]
+description = "Set EL_ENV=prod in .env"
+run = """
+python3 - <<'PY'
+from pathlib import Path
+
+env_name = "prod"
+env_file = Path(".env")
+if not env_file.exists():
+    env_file.write_text(f"EL_ENV={env_name}\\n", encoding="utf-8")
+    print("Created .env with EL_ENV=prod")
+    raise SystemExit(0)
+
+lines = env_file.read_text(encoding="utf-8").splitlines()
+updated = False
+for idx, line in enumerate(lines):
+    if line.startswith("EL_ENV="):
+        lines[idx] = f"EL_ENV={env_name}"
+        updated = True
+        break
+
+if not updated:
+    lines.append(f"EL_ENV={env_name}")
+
+env_file.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+print("Set EL_ENV=prod")
+PY
+"""
+
+[tasks.upload]
+description = "Upload extract/load configs"
+run = "manage-extract-and-load-configs upload -s bundles/extract_load/fixtures/extract_and_load_configs"
+
+[tasks.destroy]
+description = "Delete extract/load blobs for local configs"
+run = "manage-extract-and-load-configs destroy -s bundles/extract_load/fixtures/extract_and_load_configs"

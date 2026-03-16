@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from extractor_and_loader.models.common import Metadata
+from extract_and_load.models.base_config import Metadata
 
 
 class GenericLoadConfig(BaseModel):

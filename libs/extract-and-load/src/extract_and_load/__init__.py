@@ -1,5 +1,7 @@
-from extractor_and_loader.loaders import load_extract_load_config
-from extractor_and_loader.models import (
+from extract_and_load.models import (
+    ApiExtractConfig,
+    ApiExtractSpec,
+    BaseConfig,
     CommonConfig,
     ExtractConfig,
     ExtractLoadConfig,
@@ -8,11 +10,16 @@ from extractor_and_loader.models import (
     LoadConfig,
     Metadata,
     SqlExtractConfig,
-    SqlExtractSpec,
 )
+from extract_and_load.extractors import BaseExtractor, DummyApiExtractor
 
 __all__ = [
+    "BaseExtractor",
+    "DummyApiExtractor",
+    "ApiExtractConfig",
+    "ApiExtractSpec",
     "CommonConfig",
+    "BaseConfig",
     "ExtractConfig",
     "ExtractLoadConfig",
     "ExtractLoadSpec",
@@ -20,6 +27,4 @@ __all__ = [
     "LoadConfig",
     "Metadata",
     "SqlExtractConfig",
-    "SqlExtractSpec",
-    "load_extract_load_config",
 ]

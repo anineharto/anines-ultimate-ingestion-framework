@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "azure-identity>=1.25.1",
     "azure-storage-blob>=12.27.0",
-    "extractor-and-loader",
+    "extract-and-load",
     "jinja2>=3.1.6",
     "python-dotenv>=1.1.1",
     "pyyaml>=6.0.3",
@@ -25,4 +25,4 @@ build-backend = "hatchling.build"
 packages = ["src/manage_extract_and_load_configs"]
 
 [tool.uv.sources]
-extractor-and-loader = { path = "../extractor-and-loader" }
+extract-and-load = { path = "../extract-and-load" }

@@ -2,7 +2,7 @@
 
 Typer CLI to upload extract and load configs to blob storage.
 During upload it renders Jinja placeholders using a variables file and validates
-the rendered result with `extractor-and-loader` Pydantic models before upload.
+the rendered result with `extract-and-load` Pydantic models before upload.
 Validated configs are uploaded as `.json` blobs.
 Blob path format is always `<feature-branch-name>/<config-name>.json`.
 
@@ -32,8 +32,8 @@ uv run manage-extract-and-load-configs destroy \
 Set preconfigured storage settings with:
 
 ```bash
-export MANAGE_EL_STORAGE_ACCOUNT_URL="https://<storage-account>.blob.core.windows.net"
-export MANAGE_EL_STORAGE_CONTAINER="..."
+export EL_STORAGE_ACCOUNT_URL="https://<storage-account>.blob.core.windows.net"
+export EL_CONFIG_CONTAINER="..."
 ```
 
 Authentication uses Azure default credentials (`DefaultAzureCredential`).

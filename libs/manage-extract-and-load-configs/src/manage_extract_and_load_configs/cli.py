@@ -36,7 +36,7 @@ def upload(
         dir_okay=False,
         readable=True,
         resolve_path=True,
-        help="Optional path to YAML variables used for Jinja rendering. If omitted, uses MANAGE_EL_ENV from .env.",
+        help="Optional path to YAML variables used for Jinja rendering. If omitted, uses EL_ENV from .env.",
     ),
     dry_run: bool = typer.Option(
         False,

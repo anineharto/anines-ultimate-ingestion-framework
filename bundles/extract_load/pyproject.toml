@@ -5,10 +5,17 @@ description = "Databricks Asset Bundle project"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "databricks-connect>=16.4.0",
     "databricks-sdk>=0.99.0",
+    "extract-and-load",
+    "pyspark>=4.1.1",
 ]
 
 [dependency-groups]
 dev = [
+    "ipykernel>=7.2.0",
     "pytest>=9.0.2",
 ]
+
+[tool.uv.sources]
+extract-and-load = { path = "../../libs/extract-and-load", editable = true }
