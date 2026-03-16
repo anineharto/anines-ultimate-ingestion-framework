@@ -1,0 +1,225 @@
+{
+	"name": "pl_master_extract_load_pipeline",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set batch_timestamp",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "batch_timestamp",
+					"value": {
+						"value": "@pipeline().TriggerTime",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get extract-load config",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Set batch_timestamp",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_extract_load_configs",
+						"type": "DatasetReference",
+						"parameters": {
+							"branch": {
+								"value": "@pipeline().parameters.branch",
+								"type": "Expression"
+							},
+							"extract_load_config_name": {
+								"value": "@pipeline().parameters.extract_load_config_name",
+								"type": "Expression"
+							}
+						}
+					}
+				}
+			},
+			{
+				"name": "Set extract-load spec",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get extract-load config",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "extract_load_spec",
+					"value": {
+						"value": "@string(activity('Get extract-load config').output.firstRow.spec)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get last batch timestamp",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Set extract-load spec",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_get_last_batch_timestamp",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"source": {
+							"value": "@json(variables('extract_load_spec')).common.source",
+							"type": "Expression"
+						},
+						"dataset": {
+							"value": "@json(variables('extract_load_spec')).common.dataset",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Extract data",
+				"type": "Switch",
+				"dependsOn": [
+					{
+						"activity": "Get last batch timestamp",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@json(variables('extract_load_spec')).extract.kind",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "SqlExtractConfig",
+							"activities": [
+								{
+									"name": "pl_sql_extract",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "pl_sql_extract",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"extract_spec": {
+												"value": "@json(variables('extract_load_spec')).extract.spec",
+												"type": "Expression"
+											},
+											"last_batch_timestamp": {
+												"value": "@activity('Get last batch timestamp').output.pipelineReturnValue.output",
+												"type": "Expression"
+											},
+											"current_batch_timestamp": {
+												"value": "@variables('batch_timestamp')",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "pl_set_last_batch_timestamp",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Extract data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_set_last_batch_timestamp",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"parameters": {
+			"branch": {
+				"type": "string",
+				"defaultValue": "main"
+			},
+			"extract_load_config_name": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"batch_timestamp": {
+				"type": "String"
+			},
+			"extract_load_spec": {
+				"type": "String"
+			}
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,104 @@
+{
+	"name": "ds_extract_load_configs",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "saingestionframeworksb",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"branch": {
+				"type": "string"
+			},
+			"extract_load_config_name": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().extract_load_config_name",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().branch",
+					"type": "Expression"
+				},
+				"fileSystem": "extract-load-configs"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"kind": {
+					"type": "string"
+				},
+				"metadata": {
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						}
+					}
+				},
+				"spec": {
+					"type": "object",
+					"properties": {
+						"common": {
+							"type": "object",
+							"properties": {
+								"source": {
+									"type": "string"
+								},
+								"dataset": {
+									"type": "string"
+								}
+							}
+						},
+						"extract": {
+							"type": "object",
+							"properties": {
+								"kind": {
+									"type": "string"
+								},
+								"metadata": {
+									"type": "object",
+									"properties": {
+										"name": {
+											"type": "string"
+										},
+										"description": {
+											"type": "string"
+										}
+									}
+								},
+								"spec": {
+									"type": "object",
+									"properties": {
+										"server": {
+											"type": "string"
+										},
+										"database": {
+											"type": "string"
+										},
+										"table": {
+											"type": "string"
+										},
+										"query": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

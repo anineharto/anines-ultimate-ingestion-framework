@@ -1,0 +1,31 @@
+{
+	"name": "pl_sql_extract",
+	"properties": {
+		"activities": [
+			{
+				"name": "Dummy activity - replace with copy",
+				"type": "Wait",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 1
+				}
+			}
+		],
+		"parameters": {
+			"extract_spec": {
+				"type": "object"
+			},
+			"last_batch_timestamp": {
+				"type": "string"
+			},
+			"current_batch_timestamp": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "extractors"
+		},
+		"annotations": []
+	}
+}

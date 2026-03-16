@@ -1,0 +1,118 @@
+{
+	"name": "pl_get_last_batch_timestamp",
+	"properties": {
+		"activities": [
+			{
+				"name": "Check batch timestamp exist",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_last_batch_timestamps",
+						"type": "DatasetReference",
+						"parameters": {
+							"source": {
+								"value": "@pipeline().parameters.source",
+								"type": "Expression"
+							},
+							"dataset": {
+								"value": "@pipeline().parameters.dataset",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Use existing timestamp",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Check batch timestamp exist",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "output",
+							"value": {
+								"type": "Expression",
+								"content": "@activity('Check batch timestamp exist').output.childItems[0].name"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			},
+			{
+				"name": "Use default timestamp",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Check batch timestamp exist",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "output",
+							"value": {
+								"type": "Expression",
+								"content": "@formatDateTime('1970-01-01T00:00:00.123456Z', 'yyyy-MM-ddTHH:mm:ss.ffffffZ')"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			}
+		],
+		"parameters": {
+			"source": {
+				"type": "string"
+			},
+			"dataset": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "batch_timestamps"
+		},
+		"annotations": []
+	}
+}

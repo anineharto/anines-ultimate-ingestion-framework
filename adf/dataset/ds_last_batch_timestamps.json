@@ -1,0 +1,36 @@
+{
+	"name": "ds_last_batch_timestamps",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "saingestionframeworksb",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"source": {
+				"type": "string"
+			},
+			"dataset": {
+				"type": "string"
+			},
+			"batch_timestamp": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().batch_timestamp",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@concat(dataset().source, '/', dataset().dataset)",
+					"type": "Expression"
+				},
+				"fileSystem": "last-batch-timestamps"
+			}
+		}
+	}
+}
