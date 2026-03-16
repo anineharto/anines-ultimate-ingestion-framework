@@ -1,0 +1,18 @@
+kind: ExtractLoadConfig
+metadata:
+  name: source_a_dataset_b
+  description: Extract and load config for source a dataset b
+spec:
+  common:
+    source: source_a
+    dataset: dataset_b
+  extract:
+    kind: SqlExtractConfig
+    metadata:
+      name: source_a_dataset_b
+      description: Extract config for source a dataset b
+    spec:
+      server: "{{ source_a.dataset_b.server }}"
+      database: database_a
+      table: source_a_dataset_b
+      query: SELECT * FROM source_a_dataset_b

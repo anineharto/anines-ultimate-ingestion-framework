@@ -1,0 +1,17 @@
+[project]
+name = "extractor-and-loader"
+version = "0.1.0"
+description = "Typed models and loaders for extract/load configs"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.11.0",
+    "pyyaml>=6.0.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/extractor_and_loader"]

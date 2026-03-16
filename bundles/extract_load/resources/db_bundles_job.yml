@@ -1,0 +1,9 @@
+resources:
+  jobs:
+    db_bundles_job:
+      name: ${bundle.name}-sample-job
+      tasks:
+        - task_key: run_sample_notebook
+          notebook_task:
+            notebook_path: ../src/notebook.py
+          existing_cluster_id: ${var.cluster_id}

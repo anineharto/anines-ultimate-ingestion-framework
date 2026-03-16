@@ -1,0 +1,16 @@
+bundle:
+  name: db-bundles
+
+include:
+  - resources/*.yml
+
+variables:
+  cluster_id:
+    description: Existing interactive or job cluster ID to run the sample job
+    default: ""
+
+targets:
+  dev:
+    default: true
+    workspace:
+      host: https://adb-0000000000000000.0.azuredatabricks.net
