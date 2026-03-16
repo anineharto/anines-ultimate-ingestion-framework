@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any
+import uuid
 
 from extract_and_load.models.extract_load_config import ExtractLoadConfig
 
@@ -30,14 +31,10 @@ class BaseExtractor(ABC):
                 "batch_timestamp must use format yyyy-MM-ddTHH:mm:ss.ffffffZ"
             ) from exc
 
-    def build_adls_file_path(self, filename: str) -> str:
-        cleaned_filename = filename.lstrip("/")
-        if not cleaned_filename:
-            raise ValueError("filename must be non-empty")
-        return (
-            f"{self.source}/{self.dataset}/"
-            f"batch_timestamp={self.batch_timestamp}/{cleaned_filename}"
-        )
+    def build_adls_file_path(self) -> str:
+        guid = str(uuid.uuid4())
+        filename = f"{guid}.parquet"
+        return f"{self.source}/{self.dataset}/batch_timestamp={self.batch_timestamp}/{filename}"
 
     @abstractmethod
     def run(self) -> Any:
