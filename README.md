@@ -1,89 +1,130 @@
-# db-bundles
+# Anine's ultimate ingestion framework
 
-Monorepo for Databricks bundles and shared Python libraries.
+Reusable one-pipeline ingestion framework for Databricks and ADF, but the very same principles presented in this project can be achieved with other technologies as well.
 
-## Repo layout
+The idea is:
+- keep ingestion behavior config-driven (`extract_load_configs`)
+- validate configs with shared models
+- publish versioned runtime configs to storage
+- run one notebook pipeline that picks extractor implementation by config kind
 
-- `bundles/extract_load`: Databricks bundle/service
-- `libs/extract-and-load`: Pydantic models for extract/load configs
-- `libs/manage-extract-and-load-configs`: CLI to render, validate, and upload configs to Blob Storage
+## Architecture
+
+- `bundles/extract_load`
+  - Databricks bundle service and runtime notebook (`src/parametrized/extraction.py`)
+- `libs/extract-and-load`
+  - typed config models (`ExtractLoadConfig`, extract kinds, load kinds)
+  - extractor abstractions and implementations (for example `DummyApiExtractor`)
+- `libs/manage-extract-and-load-configs`
+  - CLI that renders Jinja templates, validates configs, and uploads JSON to ADLS
+- `bundles/extract_load/fixtures/extract_load_configs`
+  - source config templates per source/dataset
+- `bundles/extract_load/fixtures/environment_configs`
+  - environment-specific variables used during Jinja rendering
+
+## How The Framework Flows
+
+1. Author a template in `extract_load_configs` (YAML with optional Jinja placeholders).
+2. Define environment values in `environment_configs/<env>.yml`.
+3. Upload via CLI:
+   - template is rendered with env values
+   - rendered config is validated by `extract-and-load` models
+   - config is stored as JSON in ADLS using:
+     - `<feature-branch-name>/<config-name>.json`
+4. Run the Databricks notebook pipeline:
+   - reads `extract_load_config_name`, `feature_branch_name`, `batch_timestamp`
+   - loads `ExtractLoadConfig` from ADLS
+   - selects extractor by config kind
+   - writes output using a partitioned path pattern:
+     - `<source>/<dataset>/batch_timestamp=<timestamp>/filename.parquet`
+
+This keeps one runtime pipeline while allowing many datasets/sources through config.
 
 ## Prerequisites
 
-- `uv` installed
-- `mise` installed (optional, for easy environment switching)
-- Azure CLI installed
-- Databricks CLI installed (if you also work with bundle deploy commands)
+- `uv`
+- Azure CLI (`az`)
+- Databricks CLI (for bundle workflows)
+- optional: `mise` for env switching helpers
 
-## 1) Install the CLI as a uv tool
+## Local Setup
 
-From repo root:
+### 1) Sync environments
+
+```bash
+uv sync --directory libs/extract-and-load
+uv sync --directory libs/manage-extract-and-load-configs
+uv sync --directory bundles/extract_load
+```
+
+### 2) Install config CLI as a tool
 
 ```bash
 uv tool install --editable "./libs/manage-extract-and-load-configs"
-```
-
-After this, you can run:
-
-```bash
 manage-extract-and-load-configs --help
 ```
 
-## 2) Authenticate with Azure (Default auth)
+### 3) Configure `.env`
 
-The CLI uses `DefaultAzureCredential`. For local development, sign in with Azure CLI:
-
-```bash
-az login
-```
-
-If you need a specific tenant/subscription:
-
-```bash
-az account set --subscription "<subscription-id-or-name>"
-```
-
-## 3) Configure storage target
-
-Create a `.env` file in repo root (already supported by the CLI) with:
+Create `.env` in repo root:
 
 ```bash
 EL_STORAGE_ACCOUNT_URL="https://<storage-account>.blob.core.windows.net"
-EL_CONFIG_CONTAINER="<container-name>"
+EL_CONFIG_CONTAINER="extract-load-configs"
+EL_LANDING_CONTAINER="landing"
 EL_ENV="sandbox"
 ```
 
-Branch naming is auto-resolved from the current git branch.
-Environment config is auto-resolved from `EL_ENV`, looking for
-`environment_configs/<env>.yml` near your `--source-path`.
+Notes:
+- `EL_ENV` selects `environment_configs/<env>.yml` automatically.
+- `EL_CONFIG_CONTAINER` is where validated runtime config JSON files are uploaded.
+- `EL_LANDING_CONTAINER` is where extractors write parquet output.
 
-## 4) Upload configs
+### 4) Authenticate for storage access
 
-Validated JSON blobs are uploaded to:
+```bash
+az login
+az account set --subscription "<subscription-id-or-name>"
+```
 
-`<feature-branch-name>/<config-name>.json`
+`DefaultAzureCredential` is used by both config uploader and runtime storage clients.
 
-Example:
+## Working With `extract_load_configs`
+
+Example upload:
 
 ```bash
 manage-extract-and-load-configs upload \
-  --source-path bundles/extract_load/fixtures/extract_and_load_configs
+  --source-path bundles/extract_load/fixtures/extract_load_configs
 ```
 
-Uploads always overwrite existing blobs.
-
-## 5) Destroy uploaded configs
+Example destroy:
 
 ```bash
 manage-extract-and-load-configs destroy \
-  --source-path bundles/extract_load/fixtures/extract_and_load_configs
+  --source-path bundles/extract_load/fixtures/extract_load_configs
 ```
 
-## Optional: Use mise for monorepo environment switching
+Behavior:
+- Upload always overwrites existing blobs.
+- Jinja dotted keys are supported, for example:
+  - `source_a.dataset_b.server: sandbox-sql.company.internal`
 
-This repo includes `mise.toml` tasks to switch `EL_ENV` in `.env`.
+## Notebook Runtime (`bundles/extract_load`)
 
-Examples:
+The notebook accepts widgets:
+- `extract_load_config_name`
+- `feature_branch_name`
+- `batch_timestamp` (`yyyy-MM-ddTHH:mm:ss.ffffffZ`)
+
+Then it:
+- reads `ExtractLoadConfig` from ADLS (`<branch>/<config>.json`)
+- resolves extractor by extract config kind
+- executes extractor run
+
+## Optional: `mise` Helpers
+
+Use `mise.toml` tasks to switch active environment:
 
 ```bash
 mise run env:show
@@ -92,18 +133,9 @@ mise run env:dev
 mise run env:prod
 ```
 
-Convenience tasks:
+Convenience:
 
 ```bash
 mise run upload
 mise run destroy
 ```
-
-If an environment file does not exist in `bundles/extract_load/fixtures/environment_configs/`,
-upload will fail until that `<env>.yml` is created.
-
-## Notes
-
-- Variables files support dotted keys for Jinja templates, for example:
-  - `source_a.dataset_b.server: dev-sql.company.internal`
-- Config templates are rendered and validated before upload.

@@ -13,5 +13,9 @@
     "VIRTUAL_ENV": "/Users/anineharto/Documents/dev/db-bundles/bundles/extract_load/.venv",
     "PATH": "/Users/anineharto/Documents/dev/db-bundles/bundles/extract_load/.venv/bin:${env:PATH}",
     "PYTHONPATH": "/Users/anineharto/Documents/dev/db-bundles/libs/extract-and-load/src:/Users/anineharto/Documents/dev/db-bundles/libs/manage-extract-and-load-configs/src:${env:PYTHONPATH}"
-  }
+  },
+  "cursorpyright.analysis.extraPaths": [
+    "/Users/anineharto/Documents/dev/db-bundles/libs/extract-and-load/src",
+    "/Users/anineharto/Documents/dev/db-bundles/libs/manage-extract-and-load-configs/src"
+  ]
 }
