@@ -1,0 +1,35 @@
+{
+	"name": "pl_source_a_dataset_b",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "pl_master_extract_load_pipeline",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"extract_load_config_name": "el.source_a_dataset_b.json"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2026-03-22T17:36:00",
+				"timeZone": "W. Europe Standard Time",
+				"schedule": {
+					"minutes": [
+						0
+					],
+					"hours": [
+						8
+					]
+				}
+			}
+		}
+	}
+}
