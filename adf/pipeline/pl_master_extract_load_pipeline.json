@@ -192,7 +192,18 @@
 											"referenceName": "pl_databricks_job",
 											"type": "PipelineReference"
 										},
-										"waitOnCompletion": true
+										"waitOnCompletion": true,
+										"parameters": {
+											"extract_load_spec": {
+												"value": "@variables('extract_load_spec')",
+												"type": "Expression"
+											},
+											"last_batch_timestamp": "@activity('Get last batch timestamp').output.pipelineReturnValue.output",
+											"current_batch_timestamp": {
+												"value": "@variables('batch_timestamp')",
+												"type": "Expression"
+											}
+										}
 									}
 								}
 							]

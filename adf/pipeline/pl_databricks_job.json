@@ -12,6 +12,17 @@
 				}
 			}
 		],
+		"parameters": {
+			"extract_load_spec": {
+				"type": "object"
+			},
+			"last_batch_timestamp": {
+				"type": "string"
+			},
+			"current_batch_timestamp": {
+				"type": "string"
+			}
+		},
 		"folder": {
 			"name": "extractors"
 		},
