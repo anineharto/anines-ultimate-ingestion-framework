@@ -21,8 +21,52 @@ The idea is:
   - source config templates per source/dataset
 - `bundles/extract_load/fixtures/environment_configs`
   - environment-specific variables used during Jinja rendering
+- `adf`
+  - ADF pipelines/triggers orchestrate ingestion by passing config references and runtime parameters
+  - execution can run in an ADF pipeline (for example Copy Activity) or in a Databricks notebook/workflow
+
+```mermaid
+flowchart LR
+    C["extract_load_configs and environment_configs"] --> U["manage extract and load configs CLI"]
+    U -->|validated runtime JSON| A["ADLS config container"]
+    T["ADF trigger or orchestrator pipeline"] -->|load ExtractLoadConfig| A
+    A -->|return config payload| T
+    T -->|if config runtime is ADF| P["ADF ingestion pipeline (Copy Activity)"]
+    T -->|if config runtime is Databricks| D["Databricks notebook or workflow"]
+    A -->|read ExtractLoadConfig| D
+    L["ADLS landing container"]
+    P --> L
+    D --> L
+```
 
 ## How The Framework Flows
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant CFG as extract_load_configs templates
+    participant ENV as environment_configs env file
+    participant CLI as manage extract and load configs
+    participant ADLS as ADLS config container
+    participant ADF as ADF pipeline or trigger
+    participant DBX as Databricks extraction notebook or workflow
+    participant LAND as ADLS landing container
+
+    Dev->>CFG: 1) Author template (YAML + optional Jinja)
+    Dev->>ENV: 2) Define environment values
+    Dev->>CLI: 3) Run upload command
+    CLI->>CLI: Render template + validate ExtractLoadConfig
+    CLI->>ADLS: Upload branch and config JSON
+    alt ADF ingestion path
+        ADF->>ADLS: Pass config reference to ADF ingestion pipeline
+        ADF->>LAND: Run Copy Activity and write output
+    else Databricks ingestion path
+        ADF->>DBX: Pass config name, branch name, current and last batch timestamps
+        DBX->>ADLS: Read runtime config JSON
+        DBX->>DBX: Resolve extractor by config kind
+        DBX->>LAND: Write output
+    end
+```
 
 1. Author a template in `extract_load_configs` (YAML with optional Jinja placeholders).
 2. Define environment values in `environment_configs/<env>.yml`.
@@ -31,12 +75,14 @@ The idea is:
    - rendered config is validated by `extract-and-load` models
    - config is stored as JSON in ADLS using:
      - `<feature-branch-name>/<config-name>.json`
-4. Run the Databricks notebook pipeline:
-   - reads `extract_load_config_name`, `feature_branch_name`, `batch_timestamp`
-   - loads `ExtractLoadConfig` from ADLS
-   - selects extractor by config kind
-   - writes output using a partitioned path pattern:
-     - `<source>/<dataset>/batch_timestamp=<timestamp>/filename.parquet`
+4. Run ADF orchestration:
+   - ADF reads `extract_load_config_name`, `branch_name`, `current_batch_timestamp`, `last_batch_timestamp`
+   - ADF routes execution to the configured runtime path:
+     - run ingestion directly in ADF (for example Copy Activity), or
+     - trigger Databricks notebook/workflow
+   - selected runtime loads `ExtractLoadConfig` from ADLS as needed
+   - selected runtime writes output using a partitioned path pattern:
+     - `<source>/<dataset>/current_batch_timestamp=<timestamp>/filename.parquet`
 
 This keeps one runtime pipeline while allowing many datasets/sources through config.
 
@@ -114,8 +160,9 @@ Behavior:
 
 The notebook accepts widgets:
 - `extract_load_config_name`
-- `feature_branch_name`
-- `batch_timestamp` (`yyyy-MM-ddTHH:mm:ss.ffffffZ`)
+- `branch_name`
+- `current_batch_timestamp` (`yyyy-MM-ddTHH:mm:ss.ffffffZ`)
+- `last_batch_timestamp` (`yyyy-MM-ddTHH:mm:ss.ffffffZ`)
 
 Then it:
 - reads `ExtractLoadConfig` from ADLS (`<branch>/<config>.json`)

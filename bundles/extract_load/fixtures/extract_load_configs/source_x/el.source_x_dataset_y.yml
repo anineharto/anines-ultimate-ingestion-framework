@@ -1,0 +1,15 @@
+kind: ExtractAndLoadConfig
+metadata:
+  name: source_x_dataset_y
+  description: Extract and load config for source x dataset y
+spec:
+  common:
+    source: source_x
+    dataset: dataset_y
+  extract:
+    kind: DummyApiExtractConfig
+    metadata:
+      name: source_x_dataset_y
+      description: Extract config for source x dataset y
+    spec:
+      feed: posts

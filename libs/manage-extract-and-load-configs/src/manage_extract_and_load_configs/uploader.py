@@ -12,6 +12,7 @@ from azure.storage.blob import BlobServiceClient
 from dotenv import dotenv_values, find_dotenv
 from extract_and_load.models import ExtractLoadConfig
 from jinja2 import Environment, StrictUndefined
+from tqdm.auto import tqdm
 import yaml
 
 
@@ -264,7 +265,7 @@ def upload_configs_to_blob(
     else:
         container_client = None
 
-    for file_path in files:
+    for file_path in tqdm(files, desc="Uploading configs", unit="file"):
         blob_name = _build_blob_name(feature_branch_name, file_path)
         try:
             rendered_bytes = _render_and_validate_extract_load_config(

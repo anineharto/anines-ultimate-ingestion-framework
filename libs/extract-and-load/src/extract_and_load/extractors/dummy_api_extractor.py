@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from io import BytesIO
 from urllib.request import urlopen
 
@@ -10,7 +11,7 @@ from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeFileClient
 
 from extract_and_load.extractors.base_extractor import BaseExtractor
-from extract_and_load.models.extract_config import ApiExtractConfig
+from extract_and_load.models.extract_config import DummyApiExtractConfig
 from extract_and_load.models.extract_load_config import ExtractLoadConfig
 from extract_and_load.utils import read_env_file_values
 
@@ -23,16 +24,21 @@ class DummyApiExtractor(BaseExtractor):
     def __init__(
         self,
         extract_and_load_config: ExtractLoadConfig,
-        batch_timestamp: str,
+        current_batch_timestamp: str,
+        last_batch_timestamp: str,
         *,
         account_url: str | None = None,
         container_name: str | None = None,
     ) -> None:
-        super().__init__(extract_and_load_config, batch_timestamp)
-        extract_config: ApiExtractConfig = self.extract_and_load_config.spec.extract
-        if not isinstance(extract_config, ApiExtractConfig):
+        super().__init__(
+            extract_and_load_config=extract_and_load_config,
+            current_batch_timestamp=current_batch_timestamp,
+            last_batch_timestamp=last_batch_timestamp,
+        )
+        extract_config: DummyApiExtractConfig = self.extract_and_load_config.spec.extract
+        if not isinstance(extract_config, DummyApiExtractConfig):
             raise ValueError(
-                "DummyApiExtractor requires extract kind 'ApiExtractConfig' with spec.feed."
+                "DummyApiExtractor requires extract kind 'DummyApiExtractConfig' with spec.feed."
             )
 
         env_values = read_env_file_values()
@@ -60,6 +66,37 @@ class DummyApiExtractor(BaseExtractor):
         if isinstance(parsed, dict):
             return [parsed]
         raise ValueError("Unexpected API response. Expected object or list of objects.")
+
+    @classmethod
+    def _extract_record_timestamp(cls, record: dict) -> datetime | None:
+        timestamp_keys = ("updated_at", "modified_at", "event_timestamp", "timestamp", "created_at")
+        for key in timestamp_keys:
+            value = record.get(key)
+            if not isinstance(value, str):
+                continue
+            try:
+                return cls._parse_timestamp(value)
+            except ValueError:
+                continue
+        return None
+
+    def _filter_records_newer_than_last_batch_timestamp(
+        self, records: list[dict]
+    ) -> list[dict]:
+        parsed_records = [
+            (record, self._extract_record_timestamp(record))
+            for record in records
+        ]
+        if not any(record_timestamp is not None for _, record_timestamp in parsed_records):
+            # Dummy endpoint payloads can omit temporal fields; keep full payload in that case.
+            return records
+
+        last_batch_cutoff = self._parse_timestamp(self.last_batch_timestamp)
+        return [
+            record
+            for record, record_timestamp in parsed_records
+            if record_timestamp is not None and record_timestamp > last_batch_cutoff
+        ]
 
     @staticmethod
     def _to_parquet_bytes(records: list[dict]) -> bytes:
@@ -90,6 +127,7 @@ class DummyApiExtractor(BaseExtractor):
 
     def run(self, *, filename: str = "filename.parquet", overwrite: bool = True) -> str:
         records = self.fetch_dummy_records()
+        records = self._filter_records_newer_than_last_batch_timestamp(records)
         return self.upload_parquet_to_adls(
             records=records,
             filename=filename,

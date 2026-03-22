@@ -31,8 +31,6 @@ class SqlExtractConfig(BaseModel):
     spec: Spec
 
 
-
-
 class DummyApiExtractConfig(BaseModel):
     kind: Literal["DummyApiExtractConfig"]
     metadata: Metadata
@@ -43,13 +41,11 @@ class DummyApiExtractConfig(BaseModel):
     spec: Spec
 
 
-# Backward-compatible aliases.
-ApiExtractSpec = DummyApiExtractConfig.Spec
-ApiExtractConfig = DummyApiExtractConfig
-
-
 ExtractConfig = Annotated[
     SqlExtractConfig
     | DummyApiExtractConfig,
+    # | SsbApiExtractConfig,
+    # | SftpExtractConfig,
+    # | DynamicsCrmExtractConfig,
     Field(discriminator="kind"),
 ]

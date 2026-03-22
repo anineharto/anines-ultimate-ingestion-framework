@@ -1,3 +1,44 @@
+[settings]
+experimental = true
+
+[hooks]
+enter = { task = "deps:sync" }
+
+[tasks."deps:sync"]
+description = "Sync project dependencies on directory enter"
+run = """
+# If the active virtualenv points to a stale path, ignore it.
+if [ -n "${VIRTUAL_ENV:-}" ] && [ ! -x "$VIRTUAL_ENV/bin/python" ]; then
+  unset VIRTUAL_ENV
+fi
+
+python3 - <<'PY'
+from pathlib import Path
+import subprocess
+
+root = Path.cwd()
+project_dirs = sorted(
+    {
+        pyproject.parent
+        for pyproject in root.rglob("pyproject.toml")
+        if ".venv" not in pyproject.parts and ".git" not in pyproject.parts
+    }
+)
+
+if not project_dirs:
+    print("No pyproject.toml files found; skipping dependency sync.")
+    raise SystemExit(0)
+
+for project_dir in project_dirs:
+    print(f"Syncing dependencies in {project_dir.relative_to(root)}")
+    subprocess.run(
+        ["uv", "sync", "--active", "--all-groups"],
+        cwd=project_dir,
+        check=True,
+    )
+PY
+"""
+
 [tasks."env:show"]
 description = "Show active EL_ENV from .env"
 run = """
