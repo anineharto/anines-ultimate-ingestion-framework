@@ -27,16 +27,13 @@ The idea is:
 
 ```mermaid
 flowchart LR
-    C["extract_load_configs and environment_configs"] --> U["manage extract and load configs CLI"]
-    U -->|validated runtime JSON| A["ADLS config container"]
-    T["ADF trigger or orchestrator pipeline"] -->|load ExtractLoadConfig| A
-    A -->|return config payload| T
-    T -->|if config runtime is ADF| P["ADF ingestion pipeline (Copy Activity)"]
-    T -->|if config runtime is Databricks| D["Databricks notebook or workflow"]
-    A -->|read ExtractLoadConfig| D
-    L["ADLS landing container"]
-    P --> L
-    D --> L
+    DE["Data Engineer"] -->|Upload and validate using CLI| C["Extract load configs"]
+    TR["ADF trigger"] -->|Trigger parameter: config name| A["ADF pipeline"]
+    A -->|Read by config name| C
+    A -->|Read/write batch timestamps| B["Batch timestamps"]
+    A -->|Optional runtime path| D["(Optional) Databricks job"]
+    A -->|Direct ingestion path| L["Landing"]
+    D -->|Write extracted data| L
 ```
 
 ## How The Framework Flows

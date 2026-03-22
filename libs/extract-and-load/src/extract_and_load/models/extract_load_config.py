@@ -16,6 +16,6 @@ class ExtractLoadSpec(BaseModel):
 
 
 class ExtractLoadConfig(BaseConfig):
-    kind: Literal["ExtractLoadConfig", "ExtractAndLoadConfig"]
+    kind: Literal["ExtractLoadConfig"]
     metadata: Metadata
     spec: ExtractLoadSpec
