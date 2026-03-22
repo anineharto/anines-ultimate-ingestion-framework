@@ -2,7 +2,7 @@
 	"name": "pl_source_a_dataset_b",
 	"properties": {
 		"annotations": [],
-		"runtimeState": "Started",
+		"runtimeState": "Stopped",
 		"pipelines": [
 			{
 				"pipelineReference": {
