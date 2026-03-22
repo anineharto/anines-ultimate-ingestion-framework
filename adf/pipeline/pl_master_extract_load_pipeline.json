@@ -159,6 +159,10 @@
 										},
 										"waitOnCompletion": true,
 										"parameters": {
+											"extract_load_spec": {
+												"value": "@json(variables('extract_load_spec'))",
+												"type": "Expression"
+											},
 											"last_batch_timestamp": {
 												"value": "@activity('Get last batch timestamp').output.pipelineReturnValue.output",
 												"type": "Expression"
