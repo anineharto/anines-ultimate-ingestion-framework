@@ -137,7 +137,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"on": {
-						"value": "@json(variables('extract_load_spec')).extract.kind",
+						"value": "@if(\n    contains(\n        createArray(\n            'DummyApiExtractConfig'\n        ),\n        json(variables('extract_load_spec')).extract.kind\n     ),\n     'DatabricksExtractConfig',\n     json(variables('extract_load_spec')).extract.kind\n)\n\n",
 						"type": "Expression"
 					},
 					"cases": [
@@ -145,7 +145,7 @@
 							"value": "SqlExtractConfig",
 							"activities": [
 								{
-									"name": "pl_sql_extract",
+									"name": "SQL Extract",
 									"type": "ExecutePipeline",
 									"dependsOn": [],
 									"policy": {
@@ -175,6 +175,39 @@
 									}
 								}
 							]
+						},
+						{
+							"value": "DatabricksExtractConfig",
+							"activities": [
+								{
+									"name": "Databricks Extract",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "pl_databricks_job",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true
+									}
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "Unknown Extract kind",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unknown extract kind",
+								"errorCode": "EXTRACT_KIND_NOT_SUPPORTED"
+							}
 						}
 					]
 				}
