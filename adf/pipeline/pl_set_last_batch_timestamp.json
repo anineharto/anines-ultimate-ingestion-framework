@@ -26,6 +26,10 @@
 							"dataset": {
 								"value": "@pipeline().parameters.dataset",
 								"type": "Expression"
+							},
+							"batch_timestamp": {
+								"value": "@pipeline().parameters.batch_timestamp",
+								"type": "Expression"
 							}
 						}
 					},
@@ -34,6 +38,7 @@
 					],
 					"storeSettings": {
 						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
 						"enablePartitionDiscovery": false
 					},
 					"formatSettings": {

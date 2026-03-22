@@ -3,17 +3,90 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Dummy activity - replace with copy",
-				"type": "Wait",
+				"name": "Ingest SQL",
+				"type": "Copy",
 				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
 				"userProperties": [],
 				"typeProperties": {
-					"waitTimeInSeconds": 1
-				}
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"modifiedDatetimeStart": {
+								"value": "@pipeline().parameters.last_batch_timestamp",
+								"type": "Expression"
+							},
+							"wildcardFileName": "*.parquet",
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "FlattenHierarchy"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_landing_parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"source": {
+								"value": "@pipeline().parameters.extract_load_spec.common.source",
+								"type": "Expression"
+							},
+							"dataset": {
+								"value": "@pipeline().parameters.extract_load_spec.common.dataset",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_landing_parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"source": {
+								"value": "@pipeline().parameters.extract_load_spec.common.source",
+								"type": "Expression"
+							},
+							"dataset": {
+								"value": "@pipeline().parameters.extract_load_spec.common.dataset",
+								"type": "Expression"
+							}
+						}
+					}
+				]
 			}
 		],
 		"parameters": {
-			"extract_spec": {
+			"extract_load_spec": {
 				"type": "object"
 			},
 			"last_batch_timestamp": {
